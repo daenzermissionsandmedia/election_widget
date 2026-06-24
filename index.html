@@ -50,20 +50,9 @@
       margin-bottom: 6px;
     }
 
-    header h1 {
-      font-size: 22px;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
+    header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+    header .meta { color: var(--muted); font-size: 12px; margin-top: 4px; font-family: 'IBM Plex Mono', monospace; }
 
-    header .meta {
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 4px;
-      font-family: 'IBM Plex Mono', monospace;
-    }
-
-    /* ── status bar ── */
     #status-bar {
       max-width: 860px;
       margin: 0 auto 20px;
@@ -90,34 +79,15 @@
     #refresh-btn:hover { color: var(--text); border-color: var(--muted); }
     #refresh-btn:disabled { opacity: 0.4; cursor: default; }
 
-    /* countdown ring */
-    #countdown-wrap {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    #countdown-ring {
-      width: 16px; height: 16px;
-      transform: rotate(-90deg);
-    }
-    #countdown-ring circle {
-      fill: none;
-      stroke-width: 2;
-    }
+    #countdown-wrap { display: flex; align-items: center; gap: 6px; }
+    #countdown-ring { width: 16px; height: 16px; transform: rotate(-90deg); }
+    #countdown-ring circle { fill: none; stroke-width: 2; }
     #ring-bg   { stroke: var(--border); }
     #ring-fill { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+    @keyframes spin { to { transform: rotate(270deg); } }
+    .fetching #ring-fill { animation: spin 0.8s linear infinite; transform-origin: 50% 50%; }
 
-    /* spinning indicator during fetch */
-    @keyframes spin { to { transform: rotate(270deg); } }  /* starts at -90deg */
-    .loading #ring-fill { animation: spin 0.8s linear infinite; transform-origin: 50% 50%; }
-
-    .races {
-      max-width: 860px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+    .races { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 
     .race-card {
       background: var(--surface);
@@ -138,59 +108,56 @@
 
     .race-title { font-weight: 600; font-size: 14px; }
 
-    .race-precincts {
+    .race-meta {
       font-size: 11px;
       color: var(--muted);
       font-family: 'IBM Plex Mono', monospace;
       white-space: nowrap;
     }
 
-    .party-block {
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    .party-block:last-child { border-bottom: none; }
-
-    .party-label {
-      font-size: 10px;
-      font-family: 'IBM Plex Mono', monospace;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      padding: 2px 6px;
-      border-radius: 3px;
-      display: inline-block;
-    }
-    .party-label.R     { color: var(--r);     background: var(--r-dim); }
-    .party-label.DFL   { color: var(--dfl);   background: var(--dfl-dim); }
-    .party-label.other { color: var(--other); background: var(--other-dim); }
+    .candidates { padding: 8px 0; }
 
     .candidate-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 5px 0;
+      padding: 6px 16px;
     }
 
+    .party-badge {
+      width: 36px;
+      min-width: 36px;
+      font-size: 9px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 5px;
+      border-radius: 3px;
+      text-align: center;
+    }
+    .party-badge.R     { color: var(--r);     background: var(--r-dim); }
+    .party-badge.DFL   { color: var(--dfl);   background: var(--dfl-dim); }
+    .party-badge.other { color: var(--other); background: var(--other-dim); }
+
     .candidate-name {
-      width: 180px;
-      min-width: 140px;
+      flex: 1;
       font-size: 13px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      min-width: 0;
     }
     .candidate-name.winner { color: var(--green); font-weight: 600; }
-    .winner-star { color: var(--green); font-size: 11px; margin-right: 3px; }
+    .winner-star { color: var(--green); font-size: 11px; margin-right: 4px; }
 
     .bar-wrap {
-      flex: 1;
+      width: 120px;
+      min-width: 60px;
       background: #21262d;
       border-radius: 3px;
       height: 8px;
       overflow: hidden;
-      min-width: 60px;
     }
     .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
     .bar-fill.R     { background: var(--r); }
@@ -204,27 +171,28 @@
       font-size: 12px;
     }
     .candidate-votes {
-      width: 68px;
+      width: 76px;
       text-align: right;
       font-family: 'IBM Plex Mono', monospace;
       font-size: 11px;
       color: var(--muted);
     }
 
-    .error {
-      max-width: 860px;
-      margin: 40px auto;
-      color: var(--r);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 13px;
+    .divider { height: 1px; background: var(--border); margin: 4px 16px; }
+
+    .error-card {
       background: var(--r-dim);
-      padding: 16px;
-      border-radius: 6px;
       border: 1px solid var(--r);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      color: var(--r);
     }
+    .error-card .race-label { font-weight: 600; margin-bottom: 4px; }
 
     @media (max-width: 520px) {
-      .candidate-name { width: 130px; min-width: 100px; }
+      .bar-wrap { width: 70px; }
       .candidate-votes { display: none; }
     }
   </style>
@@ -232,19 +200,17 @@
 <body>
 
 <header>
-  <div class="eyebrow">Minnesota Primary</div>
-  <h1>U.S. House Results</h1>
-  <div class="meta">August 9, 2022</div>
+  <div class="eyebrow">Minnesota</div>
+  <h1>Election Results</h1>
+  <div class="meta">State General Election · November 8, 2022</div>
 </header>
 
 <div id="status-bar">
   <span id="status-text">Loading results…</span>
   <div id="countdown-wrap">
     <svg id="countdown-ring" viewBox="0 0 16 16">
-      <circle class="ring-bg" id="ring-bg" cx="8" cy="8" r="6" />
-      <circle id="ring-fill" cx="8" cy="8" r="6"
-              stroke-dasharray="37.7"
-              stroke-dashoffset="0" />
+      <circle id="ring-bg" cx="8" cy="8" r="6" />
+      <circle id="ring-fill" cx="8" cy="8" r="6" stroke-dasharray="37.7" stroke-dashoffset="0" />
     </svg>
     <span id="countdown-label"></span>
   </div>
@@ -254,41 +220,81 @@
 <div class="races" id="races"></div>
 
 <script>
-  // ─────────────────────────────────────────────
-  // CONFIG
-  // Tries the MN SOS server directly first.
-  // If CORS blocks it, falls back to the worker.
-  // ─────────────────────────────────────────────
-  const DIRECT_URL = 'https://electionresultsfiles.sos.mn.gov';
+  // ═══════════════════════════════════════════════════════
+  // CONFIG — edit this section to add/remove races
+  // ═══════════════════════════════════════════════════════
+
   const WORKER_URL = 'https://mn-election-proxy.daenzermissionsandmedia.workers.dev';
-  const FILE_PATH  = '/20220809/ushouse.txt';  // change for other elections
 
-  const REFRESH_INTERVAL = 5 * 60; // seconds (5 minutes)
-  const CIRC = 2 * Math.PI * 6;    // circumference of r=6 circle ≈ 37.7
+  // Base election ID — change this for a different election
+  const ELECTION_ID = 149; // 149 = 2022 General Election
 
+  // Races to display. Each entry needs a label and a url.
+  // Build URLs from: https://electionresults.sos.mn.gov/{ELECTION_ID}
+  const RACES = [
+    {
+      label: 'Governor & Lt. Governor',
+      url: `https://electionresults.sos.mn.gov/Results/Index?ersElectionId=${ELECTION_ID}&scenario=Governor&officeInElectionId=27938`,
+    },
+    {
+      label: 'Attorney General',
+      url: `https://electionresults.sos.mn.gov/Results/Index?ersElectionId=${ELECTION_ID}&scenario=AttorneyGeneral&officeInElectionId=27941`,
+    },
+    {
+      label: 'Secretary of State',
+      url: `https://electionresults.sos.mn.gov/Results/Index?ersElectionId=${ELECTION_ID}&scenario=SecretaryOfState&officeInElectionId=27939`,
+    },
+    {
+      label: 'State Auditor',
+      url: `https://electionresults.sos.mn.gov/Results/Index?ersElectionId=${ELECTION_ID}&scenario=StateAuditor&officeInElectionId=27940`,
+    },
+    {
+      label: 'U.S. House — All Districts',
+      url: `https://electionresults.sos.mn.gov/Results/Index?ersElectionId=${ELECTION_ID}&scenario=USRepresentative`,
+    },
+  ];
+
+  // Auto-refresh interval in seconds
+  const REFRESH_INTERVAL = 5 * 60;
+
+  // ═══════════════════════════════════════════════════════
+  // Runtime — no need to edit below this line
+  // ═══════════════════════════════════════════════════════
+
+  const CIRC = 2 * Math.PI * 6;
   const PARTY_ORDER = ['R', 'DFL'];
 
-  // ─────────────────────────────────────────────
-  // State
-  // ─────────────────────────────────────────────
   let secondsLeft = REFRESH_INTERVAL;
   let countdownTimer = null;
 
-  // ─────────────────────────────────────────────
-  // Countdown ring
-  // ─────────────────────────────────────────────
   const ringFill   = document.getElementById('ring-fill');
   const countLabel = document.getElementById('countdown-label');
 
+  function partyClass(abbr) {
+    if (abbr === 'R')   return 'R';
+    if (abbr === 'DFL') return 'DFL';
+    return 'other';
+  }
+
+  function fmt(n) { return Number(n).toLocaleString(); }
+
+  function setStatus(msg, isError) {
+    const el = document.getElementById('status-text');
+    el.textContent = msg;
+    el.style.color = isError ? 'var(--r)' : '';
+  }
+
+  function setLoading(on) {
+    document.getElementById('refresh-btn').disabled = on;
+    document.getElementById('countdown-ring').classList.toggle('fetching', on);
+  }
+
   function updateRing(secs) {
-    const fraction = secs / REFRESH_INTERVAL;
-    const offset   = CIRC * (1 - fraction);
+    const offset = CIRC * (1 - secs / REFRESH_INTERVAL);
     ringFill.style.strokeDashoffset = offset;
     const m = Math.floor(secs / 60);
     const s = secs % 60;
-    countLabel.textContent = m > 0
-      ? `${m}m ${String(s).padStart(2,'0')}s`
-      : `${s}s`;
+    countLabel.textContent = m > 0 ? `${m}m ${String(s).padStart(2,'0')}s` : `${s}s`;
   }
 
   function startCountdown() {
@@ -306,171 +312,139 @@
     }, 1000);
   }
 
-  // ─────────────────────────────────────────────
-  // Helpers
-  // ─────────────────────────────────────────────
-  function partyClass(p) {
-    if (p === 'R')   return 'R';
-    if (p === 'DFL') return 'DFL';
-    return 'other';
-  }
-
-  function fmt(n) { return Number(n).toLocaleString(); }
-
-  function setStatus(msg, isError) {
-    const el = document.getElementById('status-text');
-    el.textContent = msg;
-    el.style.color = isError ? 'var(--r)' : '';
-  }
-
-  function setLoading(on) {
-    document.getElementById('refresh-btn').disabled = on;
-    const wrap = document.getElementById('countdown-ring');
-    wrap.classList.toggle('loading', on);
-  }
-
-  // ─────────────────────────────────────────────
-  // Manual refresh button
-  // ─────────────────────────────────────────────
   function manualRefresh() {
     clearInterval(countdownTimer);
     loadResults();
   }
 
-  // ─────────────────────────────────────────────
-  // Data load + render
-  // ─────────────────────────────────────────────
+  // Fetch one race via the worker
+  async function fetchRace(race) {
+    const proxyUrl = `${WORKER_URL}?url=${encodeURIComponent(race.url)}`;
+    const resp = await fetch(proxyUrl);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  }
+
+  // Render a single race card
+  function renderCard(race, data) {
+    const card = document.createElement('div');
+    card.className = 'race-card';
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = 'race-header';
+
+    const titleEl = document.createElement('span');
+    titleEl.className = 'race-title';
+    titleEl.textContent = race.label;
+
+    const metaEl = document.createElement('span');
+    metaEl.className = 'race-meta';
+    metaEl.textContent = data.precincts.total > 0
+      ? `${fmt(data.precincts.reporting)}/${fmt(data.precincts.total)} precincts (${data.precincts.pct}%)`
+      : '';
+
+    hdr.append(titleEl, metaEl);
+    card.appendChild(hdr);
+
+    // Candidates — sort by party order first, then votes
+    const sorted = [...data.candidates].sort((a, b) => {
+      const ai = PARTY_ORDER.indexOf(a.partyAbbr);
+      const bi = PARTY_ORDER.indexOf(b.partyAbbr);
+      if (ai !== bi) {
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      }
+      return b.votes - a.votes;
+    });
+
+    // Find winner (highest votes overall)
+    const winner = data.candidates[0];
+
+    const candidatesEl = document.createElement('div');
+    candidatesEl.className = 'candidates';
+
+    sorted.forEach((c, i) => {
+      // Divider between parties
+      if (i > 0 && sorted[i].partyAbbr !== sorted[i-1].partyAbbr) {
+        candidatesEl.appendChild(Object.assign(document.createElement('div'), { className: 'divider' }));
+      }
+
+      const isWinner = c === winner;
+      const pc = partyClass(c.partyAbbr);
+      const row = document.createElement('div');
+      row.className = 'candidate-row';
+
+      const badge = document.createElement('span');
+      badge.className = `party-badge ${pc}`;
+      badge.textContent = c.partyAbbr;
+
+      const nameEl = document.createElement('div');
+      nameEl.className = `candidate-name${isWinner ? ' winner' : ''}`;
+      nameEl.innerHTML = isWinner
+        ? `<span class="winner-star">★</span>${c.name}`
+        : c.name;
+
+      const barWrap = document.createElement('div');
+      barWrap.className = 'bar-wrap';
+      const barFill = document.createElement('div');
+      barFill.className = `bar-fill ${pc}`;
+      barFill.style.width = `${c.pct}%`;
+      barWrap.appendChild(barFill);
+
+      const pctEl = document.createElement('div');
+      pctEl.className = 'candidate-pct';
+      pctEl.textContent = `${c.pct.toFixed(1)}%`;
+
+      const votesEl = document.createElement('div');
+      votesEl.className = 'candidate-votes';
+      votesEl.textContent = fmt(c.votes);
+
+      row.append(badge, nameEl, barWrap, pctEl, votesEl);
+      candidatesEl.appendChild(row);
+    });
+
+    card.appendChild(candidatesEl);
+    return card;
+  }
+
+  // Render an error card
+  function renderError(race, message) {
+    const card = document.createElement('div');
+    card.className = 'error-card';
+    card.innerHTML = `<div class="race-label">${race.label}</div><div>${message}</div>`;
+    return card;
+  }
+
+  // Load all races in parallel
   async function loadResults() {
     setLoading(true);
     setStatus('Fetching results…');
 
     const racesEl = document.getElementById('races');
+    racesEl.innerHTML = '';
 
-    try {
-      // Fetch via corsproxy.io to work around CORS restrictions
-      const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(DIRECT_URL + FILE_PATH)}`;
-      const resp = await fetch(proxyUrl);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const text = await resp.text();
+    const results = await Promise.allSettled(RACES.map(fetchRace));
 
-      const rows = text.trim().split('\n').map(line => {
-        const f = line.split(';');
-        return {
-          raceName:  f[4],
-          first:     f[7],
-          last:      f[8],
-          party:     f[10],
-          precRpt:   parseInt(f[11]),
-          precTotal: parseInt(f[12]),
-          votes:     parseInt(f[13]),
-          pct:       parseFloat(f[14]),
-        };
-      }).filter(r => r.raceName);
-
-      // Group by race
-      const raceMap = new Map();
-      for (const row of rows) {
-        if (!raceMap.has(row.raceName)) raceMap.set(row.raceName, []);
-        raceMap.get(row.raceName).push(row);
+    let successCount = 0;
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled' && result.value.candidates?.length) {
+        racesEl.appendChild(renderCard(RACES[i], result.value));
+        successCount++;
+      } else {
+        const msg = result.reason?.message || 'No data returned';
+        racesEl.appendChild(renderError(RACES[i], msg));
       }
+    });
 
-      racesEl.innerHTML = '';
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setStatus(`${successCount}/${RACES.length} races loaded · ${now}`, successCount === 0);
 
-      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      setStatus(`${raceMap.size} races · updated ${now}`);
-
-      for (const [raceName, candidates] of raceMap) {
-        const sample   = candidates[0];
-        const pctDone  = sample.precTotal > 0
-          ? Math.round((sample.precRpt / sample.precTotal) * 100)
-          : 0;
-
-        const partyMap = new Map();
-        for (const c of candidates) {
-          if (!partyMap.has(c.party)) partyMap.set(c.party, []);
-          partyMap.get(c.party).push(c);
-        }
-
-        const parties = [...partyMap.keys()].sort((a, b) => {
-          const ai = PARTY_ORDER.indexOf(a);
-          const bi = PARTY_ORDER.indexOf(b);
-          if (ai !== -1 && bi !== -1) return ai - bi;
-          if (ai !== -1) return -1;
-          if (bi !== -1) return 1;
-          return a.localeCompare(b);
-        });
-
-        const card = document.createElement('div');
-        card.className = 'race-card';
-
-        const hdr = document.createElement('div');
-        hdr.className = 'race-header';
-        hdr.innerHTML = `
-          <span class="race-title">${raceName}</span>
-          <span class="race-precincts">${sample.precRpt}/${sample.precTotal} precincts (${pctDone}%)</span>
-        `;
-        card.appendChild(hdr);
-
-        for (const party of parties) {
-          const pCands = partyMap.get(party).sort((a, b) => b.votes - a.votes);
-          const winner = pCands[0];
-
-          const block = document.createElement('div');
-          block.className = 'party-block';
-
-          const pLabel = document.createElement('span');
-          pLabel.className = `party-label ${partyClass(party)}`;
-          pLabel.textContent = party;
-          block.appendChild(pLabel);
-
-          for (const c of pCands) {
-            const isWinner = c === winner;
-            const row = document.createElement('div');
-            row.className = 'candidate-row';
-
-            const name = document.createElement('div');
-            name.className = `candidate-name${isWinner ? ' winner' : ''}`;
-            name.innerHTML = isWinner
-              ? `<span class="winner-star">★</span>${c.first} ${c.last}`
-              : `${c.first} ${c.last}`;
-
-            const barWrap = document.createElement('div');
-            barWrap.className = 'bar-wrap';
-            const barFill = document.createElement('div');
-            barFill.className = `bar-fill ${partyClass(party)}`;
-            barFill.style.width = `${c.pct}%`;
-            barWrap.appendChild(barFill);
-
-            const pctEl = document.createElement('div');
-            pctEl.className = 'candidate-pct';
-            pctEl.textContent = `${c.pct.toFixed(1)}%`;
-
-            const votesEl = document.createElement('div');
-            votesEl.className = 'candidate-votes';
-            votesEl.textContent = fmt(c.votes);
-
-            row.append(name, barWrap, pctEl, votesEl);
-            block.appendChild(row);
-          }
-
-          card.appendChild(block);
-        }
-
-        racesEl.appendChild(card);
-      }
-
-    } catch (err) {
-      setStatus(`Error: ${err.message}`, true);
-      if (!racesEl.innerHTML) {
-        racesEl.innerHTML = `<div class="error">Could not load results.<br><br>${err.message}</div>`;
-      }
-    } finally {
-      setLoading(false);
-      startCountdown();
-    }
+    setLoading(false);
+    startCountdown();
   }
 
-  // Kick it off
   loadResults();
 </script>
 </body>
