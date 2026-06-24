@@ -256,10 +256,10 @@
 <script>
   // ─────────────────────────────────────────────
   // CONFIG
-  // After deploying the Cloudflare Worker, replace
-  // the URL below with your worker URL.
-  // e.g. 'https://mn-election-proxy.yourname.workers.dev'
+  // Tries the MN SOS server directly first.
+  // If CORS blocks it, falls back to the worker.
   // ─────────────────────────────────────────────
+  const DIRECT_URL = 'https://electionresultsfiles.sos.mn.gov';
   const WORKER_URL = 'https://mn-election-proxy.daenzermissionsandmedia.workers.dev';
   const FILE_PATH  = '/20220809/ushouse.txt';  // change for other elections
 
@@ -347,9 +347,15 @@
     const racesEl = document.getElementById('races');
 
     try {
-      const url = `${WORKER_URL}?file=${encodeURIComponent(FILE_PATH)}`;
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      // Try direct fetch first; fall back to worker if CORS blocks it
+      let resp;
+      try {
+        resp = await fetch(`${DIRECT_URL}${FILE_PATH}`);
+        if (!resp.ok) throw new Error(`direct ${resp.status}`);
+      } catch (e) {
+        resp = await fetch(`${WORKER_URL}?file=${encodeURIComponent(FILE_PATH)}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      }
       const text = await resp.text();
 
       const rows = text.trim().split('\n').map(line => {
