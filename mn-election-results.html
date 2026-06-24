@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minnesota Election Results</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #21262d;
+      --text: #e6edf3;
+      --muted: #7d8590;
+      --r: #e05c5c;
+      --r-dim: #3a1a1a;
+      --dfl: #4a90d9;
+      --dfl-dim: #0e2040;
+      --other: #9b8fcf;
+      --other-dim: #1e1a30;
+      --green: #3fb950;
+      --accent: #f0b429;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 14px;
+      padding: 24px 16px 48px;
+      min-height: 100vh;
+    }
+
+    header {
+      max-width: 860px;
+      margin: 0 auto 28px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+
+    header .eyebrow {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    header .meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    /* ── status bar ── */
+    #status-bar {
+      max-width: 860px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    #refresh-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    #refresh-btn:hover { color: var(--text); border-color: var(--muted); }
+    #refresh-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* countdown ring */
+    #countdown-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #countdown-ring {
+      width: 16px; height: 16px;
+      transform: rotate(-90deg);
+    }
+    #countdown-ring circle {
+      fill: none;
+      stroke-width: 2;
+    }
+    #ring-bg   { stroke: var(--border); }
+    #ring-fill { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+
+    /* spinning indicator during fetch */
+    @keyframes spin { to { transform: rotate(270deg); } }  /* starts at -90deg */
+    .loading #ring-fill { animation: spin 0.8s linear infinite; transform-origin: 50% 50%; }
+
+    .races {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .race-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .race-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .race-title { font-weight: 600; font-size: 14px; }
+
+    .race-precincts {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      white-space: nowrap;
+    }
+
+    .party-block {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .party-block:last-child { border-bottom: none; }
+
+    .party-label {
+      font-size: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+    .party-label.R     { color: var(--r);     background: var(--r-dim); }
+    .party-label.DFL   { color: var(--dfl);   background: var(--dfl-dim); }
+    .party-label.other { color: var(--other); background: var(--other-dim); }
+
+    .candidate-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 0;
+    }
+
+    .candidate-name {
+      width: 180px;
+      min-width: 140px;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .candidate-name.winner { color: var(--green); font-weight: 600; }
+    .winner-star { color: var(--green); font-size: 11px; margin-right: 3px; }
+
+    .bar-wrap {
+      flex: 1;
+      background: #21262d;
+      border-radius: 3px;
+      height: 8px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+    .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+    .bar-fill.R     { background: var(--r); }
+    .bar-fill.DFL   { background: var(--dfl); }
+    .bar-fill.other { background: var(--other); }
+
+    .candidate-pct {
+      width: 46px;
+      text-align: right;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+    }
+    .candidate-votes {
+      width: 68px;
+      text-align: right;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .error {
+      max-width: 860px;
+      margin: 40px auto;
+      color: var(--r);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      background: var(--r-dim);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid var(--r);
+    }
+
+    @media (max-width: 520px) {
+      .candidate-name { width: 130px; min-width: 100px; }
+      .candidate-votes { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Minnesota Primary</div>
+  <h1>U.S. House Results</h1>
+  <div class="meta">August 9, 2022</div>
+</header>
+
+<div id="status-bar">
+  <span id="status-text">Loading results…</span>
+  <div id="countdown-wrap">
+    <svg id="countdown-ring" viewBox="0 0 16 16">
+      <circle class="ring-bg" id="ring-bg" cx="8" cy="8" r="6" />
+      <circle id="ring-fill" cx="8" cy="8" r="6"
+              stroke-dasharray="37.7"
+              stroke-dashoffset="0" />
+    </svg>
+    <span id="countdown-label"></span>
+  </div>
+  <button id="refresh-btn" onclick="manualRefresh()">↺ Refresh now</button>
+</div>
+
+<div class="races" id="races"></div>
+
+<script>
+  // ─────────────────────────────────────────────
+  // CONFIG
+  // After deploying the Cloudflare Worker, replace
+  // the URL below with your worker URL.
+  // e.g. 'https://mn-election-proxy.yourname.workers.dev'
+  // ─────────────────────────────────────────────
+  const WORKER_URL = 'https://mn-election-proxy.YOUR-NAME.workers.dev';
+  const FILE_PATH  = '/20220809/ushouse.txt';  // change for other elections
+
+  const REFRESH_INTERVAL = 5 * 60; // seconds (5 minutes)
+  const CIRC = 2 * Math.PI * 6;    // circumference of r=6 circle ≈ 37.7
+
+  const PARTY_ORDER = ['R', 'DFL'];
+
+  // ─────────────────────────────────────────────
+  // State
+  // ─────────────────────────────────────────────
+  let secondsLeft = REFRESH_INTERVAL;
+  let countdownTimer = null;
+
+  // ─────────────────────────────────────────────
+  // Countdown ring
+  // ─────────────────────────────────────────────
+  const ringFill   = document.getElementById('ring-fill');
+  const countLabel = document.getElementById('countdown-label');
+
+  function updateRing(secs) {
+    const fraction = secs / REFRESH_INTERVAL;
+    const offset   = CIRC * (1 - fraction);
+    ringFill.style.strokeDashoffset = offset;
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    countLabel.textContent = m > 0
+      ? `${m}m ${String(s).padStart(2,'0')}s`
+      : `${s}s`;
+  }
+
+  function startCountdown() {
+    clearInterval(countdownTimer);
+    secondsLeft = REFRESH_INTERVAL;
+    updateRing(secondsLeft);
+    countdownTimer = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft <= 0) {
+        clearInterval(countdownTimer);
+        loadResults();
+      } else {
+        updateRing(secondsLeft);
+      }
+    }, 1000);
+  }
+
+  // ─────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────
+  function partyClass(p) {
+    if (p === 'R')   return 'R';
+    if (p === 'DFL') return 'DFL';
+    return 'other';
+  }
+
+  function fmt(n) { return Number(n).toLocaleString(); }
+
+  function setStatus(msg, isError) {
+    const el = document.getElementById('status-text');
+    el.textContent = msg;
+    el.style.color = isError ? 'var(--r)' : '';
+  }
+
+  function setLoading(on) {
+    document.getElementById('refresh-btn').disabled = on;
+    const wrap = document.getElementById('countdown-ring');
+    wrap.classList.toggle('loading', on);
+  }
+
+  // ─────────────────────────────────────────────
+  // Manual refresh button
+  // ─────────────────────────────────────────────
+  function manualRefresh() {
+    clearInterval(countdownTimer);
+    loadResults();
+  }
+
+  // ─────────────────────────────────────────────
+  // Data load + render
+  // ─────────────────────────────────────────────
+  async function loadResults() {
+    setLoading(true);
+    setStatus('Fetching results…');
+
+    const racesEl = document.getElementById('races');
+
+    try {
+      const url = `${WORKER_URL}?file=${encodeURIComponent(FILE_PATH)}`;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+
+      const rows = text.trim().split('\n').map(line => {
+        const f = line.split(';');
+        return {
+          raceName:  f[4],
+          first:     f[7],
+          last:      f[8],
+          party:     f[10],
+          precRpt:   parseInt(f[11]),
+          precTotal: parseInt(f[12]),
+          votes:     parseInt(f[13]),
+          pct:       parseFloat(f[14]),
+        };
+      }).filter(r => r.raceName);
+
+      // Group by race
+      const raceMap = new Map();
+      for (const row of rows) {
+        if (!raceMap.has(row.raceName)) raceMap.set(row.raceName, []);
+        raceMap.get(row.raceName).push(row);
+      }
+
+      racesEl.innerHTML = '';
+
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setStatus(`${raceMap.size} races · updated ${now}`);
+
+      for (const [raceName, candidates] of raceMap) {
+        const sample   = candidates[0];
+        const pctDone  = sample.precTotal > 0
+          ? Math.round((sample.precRpt / sample.precTotal) * 100)
+          : 0;
+
+        const partyMap = new Map();
+        for (const c of candidates) {
+          if (!partyMap.has(c.party)) partyMap.set(c.party, []);
+          partyMap.get(c.party).push(c);
+        }
+
+        const parties = [...partyMap.keys()].sort((a, b) => {
+          const ai = PARTY_ORDER.indexOf(a);
+          const bi = PARTY_ORDER.indexOf(b);
+          if (ai !== -1 && bi !== -1) return ai - bi;
+          if (ai !== -1) return -1;
+          if (bi !== -1) return 1;
+          return a.localeCompare(b);
+        });
+
+        const card = document.createElement('div');
+        card.className = 'race-card';
+
+        const hdr = document.createElement('div');
+        hdr.className = 'race-header';
+        hdr.innerHTML = `
+          <span class="race-title">${raceName}</span>
+          <span class="race-precincts">${sample.precRpt}/${sample.precTotal} precincts (${pctDone}%)</span>
+        `;
+        card.appendChild(hdr);
+
+        for (const party of parties) {
+          const pCands = partyMap.get(party).sort((a, b) => b.votes - a.votes);
+          const winner = pCands[0];
+
+          const block = document.createElement('div');
+          block.className = 'party-block';
+
+          const pLabel = document.createElement('span');
+          pLabel.className = `party-label ${partyClass(party)}`;
+          pLabel.textContent = party;
+          block.appendChild(pLabel);
+
+          for (const c of pCands) {
+            const isWinner = c === winner;
+            const row = document.createElement('div');
+            row.className = 'candidate-row';
+
+            const name = document.createElement('div');
+            name.className = `candidate-name${isWinner ? ' winner' : ''}`;
+            name.innerHTML = isWinner
+              ? `<span class="winner-star">★</span>${c.first} ${c.last}`
+              : `${c.first} ${c.last}`;
+
+            const barWrap = document.createElement('div');
+            barWrap.className = 'bar-wrap';
+            const barFill = document.createElement('div');
+            barFill.className = `bar-fill ${partyClass(party)}`;
+            barFill.style.width = `${c.pct}%`;
+            barWrap.appendChild(barFill);
+
+            const pctEl = document.createElement('div');
+            pctEl.className = 'candidate-pct';
+            pctEl.textContent = `${c.pct.toFixed(1)}%`;
+
+            const votesEl = document.createElement('div');
+            votesEl.className = 'candidate-votes';
+            votesEl.textContent = fmt(c.votes);
+
+            row.append(name, barWrap, pctEl, votesEl);
+            block.appendChild(row);
+          }
+
+          card.appendChild(block);
+        }
+
+        racesEl.appendChild(card);
+      }
+
+    } catch (err) {
+      setStatus(`Error: ${err.message}`, true);
+      if (!racesEl.innerHTML) {
+        racesEl.innerHTML = `<div class="error">Could not load results.<br><br>${err.message}</div>`;
+      }
+    } finally {
+      setLoading(false);
+      startCountdown();
+    }
+  }
+
+  // Kick it off
+  loadResults();
+</script>
+</body>
+</html>
