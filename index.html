@@ -347,15 +347,10 @@
     const racesEl = document.getElementById('races');
 
     try {
-      // Try direct fetch first; fall back to worker if CORS blocks it
-      let resp;
-      try {
-        resp = await fetch(`${DIRECT_URL}${FILE_PATH}`);
-        if (!resp.ok) throw new Error(`direct ${resp.status}`);
-      } catch (e) {
-        resp = await fetch(`${WORKER_URL}?file=${encodeURIComponent(FILE_PATH)}`);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      }
+      // Fetch via corsproxy.io to work around CORS restrictions
+      const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(DIRECT_URL + FILE_PATH)}`;
+      const resp = await fetch(proxyUrl);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const text = await resp.text();
 
       const rows = text.trim().split('\n').map(line => {
