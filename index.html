@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -447,12 +448,14 @@ async function fetchAndRender() {
     const res = await fetch(FEED_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
+    console.log('Feed response length:', text.length);
+    console.log('Feed preview:', text.substring(0, 500));
     const raceMap = parseXML(text);
+    console.log('Parsed race titles:', Object.keys(raceMap));
     if (!raceMap || !Object.keys(raceMap).length) throw new Error('Empty result');
     renderPanels(raceMap);
   } catch (err) {
     console.warn('Live feed error:', err);
-    // No fallback — show nothing rather than stale data
   }
 }
 
