@@ -260,9 +260,8 @@
 
 <script>
 const ADVANCE_MS = 10000;
-const FEED_URL   = 'https://mn-election-proxy.daenzermissionsandmedia.workers.dev';
-const REFRESH_MS = 60000; // refresh live data every 60 seconds
-
+const FEED_URL   = 'https://mn-election-proxy.daenzermissionsandmedia.workers.dev/';
+const REFRESH_MS = 60000;
 
 // ── Photos: keyed by candidate name ──────────────────────────────────────────
 // Drop in base64 strings or URLs when headshots are available
@@ -274,67 +273,90 @@ const PHOTOS = {
 };
 
 // ── Parse ─────────────────────────────────────────────────────────────────────
-// ── Parse semicolon-delimited SOS flat file ───────────────────────────────────
-function parseRaw(raw) {
-  const rows = raw.trim().split('\n').map(r => r.trim()).filter(Boolean);
-  return rows.map(r => {
-    const f = r.split(';');
-    return {
-      raceCode:  f[3],
-      raceLabel: f[4],
-      candName:  f[7].trim(),
-      party:     f[10].trim(),
-      precRep:   parseInt(f[11]) || 0,
-      precTot:   parseInt(f[12]) || 0,
-      votes:     parseInt(f[13]) || 0,
-      pct:       parseFloat(f[14]) || 0,
-      partyTot:  parseInt(f[15]) || 0,
-    };
-  });
-}
+// ── Race configuration ────────────────────────────────────────────────────────
+// race_title values come from the <packet><race_title> element in the live feed.
+// Update these strings when switching to Governor/Senate for the real election.
+// Panel display title is what viewers see; dflLabel is the left-column party name.
+const RACES = [
+  {
+    panelTitle: 'U.S. House District 1',
+    dflTitle:   'LS-U.S. Representative District 1 - D',
+    rTitle:     'LS-U.S. Representative District 1 - R',
+    dflLabel:   'Democrat',
+  },
+  {
+    panelTitle: 'U.S. House District 2',
+    dflTitle:   'LS-U.S. Representative District 2 - D',
+    rTitle:     'LS-U.S. Representative District 2 - R',
+    dflLabel:   'Democrat',
+  },
+  // ── Swap these in for the real election: ──────────────────────────────────
+  // { panelTitle: 'Governor',    dflTitle: 'Governor - DFL', rTitle: 'Governor - R',       dflLabel: 'DFL'      },
+  // { panelTitle: 'U.S. Senate', dflTitle: 'U.S. Senator - D', rTitle: 'U.S. Senator - R', dflLabel: 'Democrat' },
+];
 
-// ── Parse CBS LiveSync NT XML feed ────────────────────────────────────────────
+// ── Parse CBS LiveSync <data>/<packet> XML format ─────────────────────────────
 function parseXML(xmlText) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xmlText, 'application/xml');
-  const candidates = [];
 
-  doc.querySelectorAll('contest').forEach(contest => {
-    const raceCode  = contest.getAttribute('officeID') || contest.getAttribute('raceID') || '';
-    const raceLabel = contest.getAttribute('officeName') || contest.getAttribute('name') || '';
-    const precRep   = parseInt(contest.getAttribute('precinctsReporting') || contest.getAttribute('precincts_reporting') || 0);
-    const precTot   = parseInt(contest.getAttribute('precinctsTotal') || contest.getAttribute('precincts_total') || contest.getAttribute('totalPrecincts') || 1);
+  // Map: race_title → { precRep, precTot, candidates[] }
+  const raceMap = {};
 
-    contest.querySelectorAll('choice, candidate').forEach(c => {
-      const rawParty  = (c.getAttribute('party') || c.getAttribute('partyID') || '').toUpperCase();
-      const partyNorm = rawParty === 'DEM' ? 'DFL' : rawParty === 'REP' ? 'R' : rawParty;
-      const votes     = parseInt(c.getAttribute('voteCount') || c.getAttribute('votes') || c.getAttribute('totalVotes') || 0);
-      const pct       = parseFloat(c.getAttribute('votePct') || c.getAttribute('pctOfVote') || c.getAttribute('percent') || 0);
-      const name      = (c.getAttribute('name') || c.getAttribute('fullName') || '').trim();
+  doc.querySelectorAll('packet').forEach(packet => {
+    const title   = (packet.querySelector('race_title') || {}).textContent || '';
+    const precRep = parseInt((packet.querySelector('pcts_reporting') || {}).textContent) || 0;
+    const precTot = parseInt((packet.querySelector('pcts_total')     || {}).textContent) || 1;
+
+    if (!title) return;
+
+    // Use first occurrence of each race_title (feed sometimes duplicates packets)
+    if (!raceMap[title]) {
+      raceMap[title] = { precRep, precTot, candidates: [] };
+    }
+
+    packet.querySelectorAll('candidate').forEach(c => {
+      const name  = (c.querySelector('name')  || {}).textContent || '';
+      const votes = parseInt((c.querySelector('votes') || {}).textContent) || 0;
+      const party = ((c.querySelector('party') || {}).textContent || '').trim().toUpperCase();
       if (!name) return;
-      candidates.push({ raceCode, raceLabel, candName: name, party: partyNorm, precRep, precTot, votes, pct, partyTot: 0 });
+      raceMap[title].candidates.push({ name: name.trim(), votes, party });
     });
   });
 
-  // Fallback: embedded flat rows
-  if (!candidates.length) {
-    const text = doc.body ? doc.body.textContent : xmlText;
-    if (text && text.includes('MN;;;')) return parseRaw(text);
-  }
-  return candidates;
+  return raceMap;
 }
 
-// ── Find leader for a given race + party ─────────────────────────────────────
-function getLeader(candidates, raceCode, party) {
-  const pool = candidates.filter(c => c.raceCode === raceCode && c.party === party);
+// ── Get leader for a race+party from raceMap ──────────────────────────────────
+function getLeaderFromMap(raceMap, raceTitle, party) {
+  const race = raceMap[raceTitle];
+  if (!race) return null;
+
+  const pool = race.candidates.filter(c => c.party === party);
   if (!pool.length) return null;
+
   pool.sort((a, b) => b.votes - a.votes);
-  return pool[0];
+  const top = pool[0];
+
+  // Calculate pct from all candidates in that race (party-specific total)
+  const partyTotal = pool.reduce((sum, c) => sum + c.votes, 0);
+  const pct = partyTotal > 0 ? (top.votes / partyTotal) * 100 : 0;
+
+  return {
+    candName: top.name,
+    votes:    top.votes,
+    pct,
+    precRep:  race.precRep,
+    precTot:  race.precTot,
+    party,
+  };
 }
 
 // ── Split name into first / last ──────────────────────────────────────────────
 function splitName(fullName) {
-  const primary = fullName.split(' and ')[0].trim();
+  // Strip trailing ", R" or ", DFL" party suffixes that appear in some name fields
+  const clean = fullName.replace(/,\s*(R|DFL|D|REP|DEM)$/i, '').trim();
+  const primary = clean.split(' and ')[0].trim();
   const parts = primary.split(' ');
   if (parts.length === 1) return { first: '', last: parts[0] };
   return { first: parts.slice(0, -1).join(' '), last: parts[parts.length - 1] };
@@ -342,7 +364,17 @@ function splitName(fullName) {
 
 // ── Build candidate half-panel ────────────────────────────────────────────────
 function buildSide(leader, partyLabel, sideClass, precinctStr) {
-  if (!leader) return '<div class="kr-candidate ' + sideClass + '"><div class="kr-party-header"><span>' + partyLabel + '</span><span class="kr-leaders-tag">&#9670; LEADER</span></div><div class="kr-cand-row"><div class="kr-name">No data</div></div></div>';
+  if (!leader) return (
+    '<div class="kr-candidate ' + sideClass + '">' +
+      '<div class="kr-party-header">' +
+        '<span>' + partyLabel + '</span>' +
+        '<span class="kr-leaders-tag">&#9670; LEADER</span>' +
+      '</div>' +
+      '<div class="kr-cand-row">' +
+        '<div class="kr-info"><div class="kr-name">No data</div></div>' +
+      '</div>' +
+    '</div>'
+  );
 
   const photo = PHOTOS[leader.candName] || null;
   const avatarInner = photo
@@ -390,25 +422,19 @@ function buildPanel(title, dflLeader, rLeader, dflLabel, dflPrec, rPrec) {
   return div;
 }
 
-// ── Render panels from candidate array ───────────────────────────────────────
-function renderPanels(candidates) {
-  const govDFL = getLeader(candidates, '0331', 'DFL');
-  const govR   = getLeader(candidates, '0331', 'R');
-  const govDFLPrec = govDFL ? Math.round((govDFL.precRep / govDFL.precTot) * 100) + '% votes in' : '';
-  const govRPrec   = govR   ? Math.round((govR.precRep   / govR.precTot)   * 100) + '% votes in' : '';
-
-  const senDFL = getLeader(candidates, '0102', 'DFL');
-  const senR   = getLeader(candidates, '0102', 'R');
-  const senDFLPrec = senDFL ? Math.round((senDFL.precRep / senDFL.precTot) * 100) + '% votes in' : '';
-  const senRPrec   = senR   ? Math.round((senR.precRep   / senR.precTot)   * 100) + '% votes in' : '';
-
+// ── Render panels from raceMap ────────────────────────────────────────────────
+function renderPanels(raceMap) {
   const stage = document.getElementById('kr-stage');
   stage.innerHTML = '';
 
-  panels = [
-    buildPanel('Governor',    govDFL, govR, 'DFL',      govDFLPrec, govRPrec),
-    buildPanel('U.S. Senate', senDFL, senR, 'Democrat', senDFLPrec, senRPrec),
-  ];
+  panels = RACES.map(race => {
+    const dfl = getLeaderFromMap(raceMap, race.dflTitle, 'DFL');
+    const r   = getLeaderFromMap(raceMap, race.rTitle,   'R');
+    const dflPrec = dfl ? Math.round((dfl.precRep / dfl.precTot) * 100) + '% votes in' : '';
+    const rPrec   = r   ? Math.round((r.precRep   / r.precTot)   * 100) + '% votes in' : '';
+    return buildPanel(race.panelTitle, dfl, r, race.dflLabel, dflPrec, rPrec);
+  });
+
   panels.forEach(p => stage.appendChild(p));
   showPanel(current < panels.length ? current : 0);
   document.getElementById('kr-time').textContent =
@@ -416,20 +442,17 @@ function renderPanels(candidates) {
 }
 
 // ── Fetch live data ───────────────────────────────────────────────────────────
-async function fetchAndRender(isFirstLoad) {
+async function fetchAndRender() {
   try {
     const res = await fetch(FEED_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
-    const candidates = (text.trim().startsWith('<') || text.trim().startsWith('<?'))
-      ? parseXML(text)
-      : parseRaw(text);
-    if (candidates && candidates.length) { renderPanels(candidates); return; }
-    throw new Error('Empty result');
+    const raceMap = parseXML(text);
+    if (!raceMap || !Object.keys(raceMap).length) throw new Error('Empty result');
+    renderPanels(raceMap);
   } catch (err) {
     console.warn('Live feed error:', err);
-    if (isFirstLoad) renderPanels(parseRaw(FALLBACK_RAW));
-    // On refresh failures, keep existing display
+    // No fallback — show nothing rather than stale data
   }
 }
 
@@ -459,13 +482,13 @@ function krGo(dir) {
 
 function scheduleRefresh() {
   refreshTimer = setTimeout(async () => {
-    await fetchAndRender(false);
+    await fetchAndRender();
     scheduleRefresh();
   }, REFRESH_MS);
 }
 
 async function init() {
-  await fetchAndRender(true);
+  await fetchAndRender();
   scheduleAdvance();
   scheduleRefresh();
 
