@@ -401,9 +401,10 @@ function buildSide(leader, partyLabel, sideClass, precinctStr) {
     '</div>'
   );
 
-  const photo = PHOTOS[leader.candName] || null;
+  const cleanName = leader.candName.replace(/,\s*(R|DFL|D|REP|DEM)$/i, '').trim();
+  const photo = PHOTOS[cleanName] || PHOTOS[leader.candName] || null;
   const avatarInner = photo
-    ? '<img src="' + photo + '" alt="' + leader.candName + '" />'
+    ? '<img src="' + photo + '" alt="' + cleanName + '" />'
     : '<div class="kr-avatar-head"></div><div class="kr-avatar-body"></div>';
 
   const precStr = precinctStr ? '<span class="kr-votes-in">' + precinctStr + '</span>' : '';
@@ -530,3 +531,4 @@ init();
 </script>
 </body>
 </html>
+
