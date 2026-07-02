@@ -10,12 +10,23 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #111;
+  }
+
+  body {
+    display: flex;
+    align-items: stretch;
+  }
+
   .kr-wrap {
     font-family: 'Roboto', arial, sans-serif;
     background: #111;
     color: #fff;
     border: 1px solid #333;
-    overflow: hidden;
+    overflow: visible;
     width: 100%;
   }
 
@@ -163,9 +174,9 @@
     font-size: 30px;
     color: #fff;
     line-height: 1.15;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
   }
   .kr-firstname { }
   .kr-lastname  { }
@@ -176,6 +187,7 @@
     font-weight: 700;
     font-size: 72px;
     line-height: 1;
+    overflow: visible;
   }
   .dfl-side .kr-pct { color: #a0c8ff; }
   .r-side .kr-pct  { color: #FF3333; }
@@ -275,25 +287,22 @@ const PHOTOS = {
 
 // ── Parse ─────────────────────────────────────────────────────────────────────
 // ── Race configuration ────────────────────────────────────────────────────────
-// race_title values come from the <packet><race_title> element in the live feed.
-// Update these strings when switching to Governor/Senate for the real election.
-// Panel display title is what viewers see; dflLabel is the left-column party name.
+// Each entry becomes one rotating panel (DFL left, R right).
+// dflTitle / rTitle must exactly match <race_title> values in the live feed.
+// ─────────────────────────────────────────────────────────────────────────────
+// TO SWAP IN GOVERNOR / SENATE for the real election, replace the entries below
+// with the exact <race_title> strings from the live feed, e.g.:
+//   { panelTitle: 'Governor',    dflTitle: 'Governor - DFL',    rTitle: 'Governor - R',    dflLabel: 'DFL'      },
+//   { panelTitle: 'U.S. Senate', dflTitle: 'U.S. Senator - DFL', rTitle: 'U.S. Senator - R', dflLabel: 'Democrat' },
+// ─────────────────────────────────────────────────────────────────────────────
 const RACES = [
-  {
-    panelTitle: 'U.S. House District 1',
-    dflTitle:   'LS-U.S. Representative District 1 - D',
-    rTitle:     'LS-U.S. Representative District 1 - R',
-    dflLabel:   'Democrat',
-  },
-  {
-    panelTitle: 'U.S. House District 2',
-    dflTitle:   'LS-U.S. Representative District 2 - D',
-    rTitle:     'LS-U.S. Representative District 2 - R',
-    dflLabel:   'Democrat',
-  },
-  // ── Swap these in for the real election: ──────────────────────────────────
-  // { panelTitle: 'Governor',    dflTitle: 'Governor - DFL', rTitle: 'Governor - R',       dflLabel: 'DFL'      },
-  // { panelTitle: 'U.S. Senate', dflTitle: 'U.S. Senator - D', rTitle: 'U.S. Senator - R', dflLabel: 'Democrat' },
+  { panelTitle: 'U.S. House District 1', dflTitle: 'LS-U.S. Representative District 1 - D', rTitle: 'LS-U.S. Representative District 1 - R', dflLabel: 'Democrat' },
+  { panelTitle: 'U.S. House District 2', dflTitle: 'LS-U.S. Representative District 2 - D', rTitle: 'LS-U.S. Representative District 2 - R', dflLabel: 'Democrat' },
+  { panelTitle: 'U.S. House District 4', dflTitle: 'LS-U.S. Representative District 4',     rTitle: 'LS-U.S. Representative District 4',     dflLabel: 'DFL'      },
+  { panelTitle: 'U.S. House District 5', dflTitle: 'LS-U.S. Representative District 5',     rTitle: 'LS-U.S. Representative District 5',     dflLabel: 'DFL'      },
+  { panelTitle: 'U.S. House District 6', dflTitle: 'LS-U.S. Representative District 6',     rTitle: 'LS-U.S. Representative District 6',     dflLabel: 'DFL'      },
+  { panelTitle: 'U.S. House District 7', dflTitle: 'LS-U.S. Representative District 7',     rTitle: 'LS-U.S. Representative District 7',     dflLabel: 'DFL'      },
+  { panelTitle: 'U.S. House District 8', dflTitle: 'LS-U.S. Representative District 8',     rTitle: 'LS-U.S. Representative District 8',     dflLabel: 'DFL'      },
 ];
 
 // ── Parse CBS LiveSync <data>/<packet> XML format ─────────────────────────────
@@ -448,10 +457,7 @@ async function fetchAndRender() {
     const res = await fetch(FEED_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
-    console.log('Feed response length:', text.length);
-    console.log('Feed preview:', text.substring(0, 500));
     const raceMap = parseXML(text);
-    console.log('Parsed race titles:', Object.keys(raceMap));
     if (!raceMap || !Object.keys(raceMap).length) throw new Error('Empty result');
     renderPanels(raceMap);
   } catch (err) {
