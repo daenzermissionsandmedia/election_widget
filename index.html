@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -112,14 +113,13 @@
     text-transform: uppercase;
   }
 
-  /* Vertical stack: photo centered, name below, pct below */
+  /* Horizontal row: photo + info side by side */
   .kr-cand-row {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 8px 14px;
+    gap: 10px;
+    padding: 12px 10px;
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -127,9 +127,9 @@
 
   /* Avatar */
   .kr-avatar {
-    width: 90px;
-    min-width: 90px;
-    height: 100px;
+    width: clamp(50px, 13vw, 100px);
+    min-width: clamp(50px, 13vw, 100px);
+    height: clamp(58px, 15vw, 114px);
     background: #2a2a2a;
     border-radius: 4px;
     overflow: hidden;
@@ -159,24 +159,24 @@
     position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
   }
 
-  /* Info block below photo */
+  /* Info block to right of photo */
   .kr-info {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    justify-content: center;
     gap: 2px;
-    width: 100%;
     min-width: 0;
+    flex: 1;
+    overflow: hidden;
   }
 
   /* Name */
   .kr-name {
     font-family: 'Roboto Condensed', arial, sans-serif;
     font-weight: 700;
-    font-size: 22px;
+    font-size: clamp(13px, 3.5vw, 26px);
     color: #fff;
     line-height: 1.15;
-    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -189,9 +189,8 @@
   .kr-pct {
     font-family: 'Roboto Condensed', arial, sans-serif;
     font-weight: 700;
-    font-size: 64px;
+    font-size: clamp(32px, 10vw, 72px);
     line-height: 1;
-    text-align: center;
   }
   .dfl-side .kr-pct { color: #a0c8ff; }
   .r-side .kr-pct  { color: #FF3333; }
