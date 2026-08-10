@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -276,7 +275,7 @@
 
 <script>
 const ADVANCE_MS = 10000;
-const FEED_URL   = 'https://mn-election-proxy.daenzermissionsandmedia.workers.dev/';
+const FEED_URL   = 'https://mn-election-proxy.daenzermissionsandmedia.workers.dev/results';
 const REFRESH_MS = 60000;
 
 // ── Photos: keyed by candidate name ──────────────────────────────────────────
@@ -320,39 +319,27 @@ const PHOTOS = {
 //   { panelTitle: 'U.S. Senate', dflTitle: 'U.S. Senator - DFL', rTitle: 'U.S. Senator - R', dflLabel: 'Democrat' },
 // ─────────────────────────────────────────────────────────────────────────────
 const RACES = [
-  { panelTitle: 'MN Governor', dflTitle: 'LS-Governor & Lt Governor - D', rTitle: 'LS-Governor & Lt Governor - R', dflLabel: 'Democrat' },
-  { panelTitle: 'MN U.S. Senate', dflTitle: 'LS-U.S. Senator - D', rTitle: 'LS-U.S. Senator - R', dflLabel: 'Democrat' },
+  { panelTitle: 'MN Governor',    dflTitle: 'MN Governor Dem Primary',  rTitle: 'MN Governor Rep Primary',  dflLabel: 'Democrat' },
+  { panelTitle: 'MN U.S. Senate', dflTitle: 'MN Senate Dem Primary',    rTitle: 'MN Senate Rep Primary',    dflLabel: 'Democrat' },
+  { panelTitle: 'WI Governor',    dflTitle: 'WI Governor Dem Primary',  rTitle: 'WI Governor Rep Primary',  dflLabel: 'Democrat' },
 ];
 
 // ── Parse CBS LiveSync <data>/<packet> XML format ─────────────────────────────
-function parseXML(xmlText) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xmlText, 'application/xml');
-
-  // Map: race_title → { precRep, precTot, candidates[] }
+function parseJSON(json) {
+  // Convert worker JSON response to raceMap format the widget expects
+  // raceMap: { title -> { precRep, precTot, candidates[] } }
   const raceMap = {};
-
-  doc.querySelectorAll('packet').forEach(packet => {
-    const title   = (packet.querySelector('race_title') || {}).textContent || '';
-    const precRep = parseInt((packet.querySelector('pcts_reporting') || {}).textContent) || 0;
-    const precTot = parseInt((packet.querySelector('pcts_total')     || {}).textContent) || 1;
-
-    if (!title) return;
-
-    // Use first occurrence of each race_title (feed sometimes duplicates packets)
-    if (!raceMap[title]) {
-      raceMap[title] = { precRep, precTot, candidates: [] };
-    }
-
-    packet.querySelectorAll('candidate').forEach(c => {
-      const name  = (c.querySelector('name')  || {}).textContent || '';
-      const votes = parseInt((c.querySelector('votes') || {}).textContent) || 0;
-      const party = ((c.querySelector('party') || {}).textContent || '').trim().toUpperCase();
-      if (!name) return;
-      raceMap[title].candidates.push({ name: name.trim(), votes, party });
-    });
+  (json.races || []).forEach(race => {
+    raceMap[race.title] = {
+      precRep: race.pcts_reporting,
+      precTot: race.pcts_total,
+      candidates: race.candidates.map(c => ({
+        name:  c.name,
+        votes: c.votes,
+        party: c.party.toUpperCase(),
+      })),
+    };
   });
-
   return raceMap;
 }
 
@@ -361,7 +348,9 @@ function getLeaderFromMap(raceMap, raceTitle, party) {
   const race = raceMap[raceTitle];
   if (!race) return null;
 
-  const pool = race.candidates.filter(c => c.party === party);
+  // Normalize party: DEM->DFL, REP->R for matching
+  const normalizeParty = p => p === 'DEM' ? 'DFL' : p === 'REP' ? 'R' : p;
+  const pool = race.candidates.filter(c => normalizeParty(c.party) === normalizeParty(party));
   if (!pool.length) return null;
 
   pool.sort((a, b) => b.votes - a.votes);
@@ -441,10 +430,10 @@ function buildPanel(title, dflLeader, rLeader, dflLabel, dflPrec, rPrec) {
   div.className = 'kr-panel hidden';
   div.innerHTML =
     '<div class="kr-race-label">' +
-      '<span>' + title + ' — KEY PRIMARY RACES</span>' +
+      '<span>' + title + ' — PRIMARY</span>' +
     '</div>' +
     '<div class="kr-body">' +
-      buildSide(dflLeader, 'Democratic Race Leader', 'dfl-side', dflPrec) +
+      buildSide(dflLeader, 'Democrat Race Leader', 'dfl-side', dflPrec) +
       buildSide(rLeader, 'Republican Race Leader', 'r-side', rPrec) +
     '</div>';
   return div;
@@ -474,8 +463,8 @@ async function fetchAndRender() {
   try {
     const res = await fetch(FEED_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    const raceMap = parseXML(text);
+    const json = await res.json();
+    const raceMap = parseJSON(json);
     if (!raceMap || !Object.keys(raceMap).length) throw new Error('Empty result');
     renderPanels(raceMap);
   } catch (err) {
