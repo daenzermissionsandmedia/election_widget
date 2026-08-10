@@ -34,6 +34,25 @@
     opacity: 1;
   }
 
+  /* Loading spinner */
+  .kr-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+  }
+  .kr-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #333;
+    border-top-color: #666;
+    border-radius: 50%;
+    animation: kr-spin 0.9s linear infinite;
+  }
+  @keyframes kr-spin {
+    to { transform: rotate(360deg); }
+  }
+
   /* Top label bar */
   .kr-race-label {
     background: #1a1a1a;
@@ -267,7 +286,7 @@
 <body>
 
 <div class="kr-wrap" role="region" aria-label="MN Primary Election Results">
-  <div class="kr-stage" id="kr-stage"></div>
+  <div class="kr-stage" id="kr-stage"><div class="kr-loading"><div class="kr-spinner"></div></div></div>
   <div class="kr-nav">
     <button class="kr-nav-btn" onclick="krGo(-1)">&#8592; Prev</button>
     <div class="kr-nav-center">
@@ -450,7 +469,7 @@ function buildPanel(title, dflLeader, rLeader, dflLabel, dflPrec, rPrec) {
 // ── Render panels from raceMap ────────────────────────────────────────────────
 function renderPanels(raceMap) {
   const stage = document.getElementById('kr-stage');
-  stage.innerHTML = '';
+  stage.innerHTML = ''; // clears loading spinner
 
   panels = RACES.map(race => {
     const dfl = getLeaderFromMap(raceMap, race.dflTitle, 'DFL');
