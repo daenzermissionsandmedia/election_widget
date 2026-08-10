@@ -27,11 +27,6 @@
     border: 1px solid #333;
     overflow: visible;
     width: 100%;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .kr-wrap.ready {
-    opacity: 1;
   }
 
   /* Loading spinner */
@@ -264,6 +259,14 @@
 
   /* Panel transitions */
   .kr-stage { position: relative; }
+  .kr-stage.ready { }
+  .kr-panels-wrap {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .kr-panels-wrap.ready {
+    opacity: 1;
+  }
   .kr-panel { transition: opacity 0.6s ease; }
   .kr-panel.hidden {
     opacity: 0;
@@ -286,7 +289,7 @@
 <body>
 
 <div class="kr-wrap" role="region" aria-label="MN Primary Election Results">
-  <div class="kr-stage" id="kr-stage"><div class="kr-loading"><div class="kr-spinner"></div></div></div>
+  <div class="kr-stage" id="kr-stage"><div class="kr-loading" id="kr-loading"><div class="kr-spinner"></div></div><div class="kr-panels-wrap" id="kr-panels-wrap"></div></div>
   <div class="kr-nav">
     <button class="kr-nav-btn" onclick="krGo(-1)">&#8592; Prev</button>
     <div class="kr-nav-center">
@@ -468,8 +471,9 @@ function buildPanel(title, dflLeader, rLeader, dflLabel, dflPrec, rPrec) {
 
 // ── Render panels from raceMap ────────────────────────────────────────────────
 function renderPanels(raceMap) {
-  const stage = document.getElementById('kr-stage');
-  stage.innerHTML = ''; // clears loading spinner
+  const stage = document.getElementById('kr-panels-wrap');
+  stage.innerHTML = '';
+  document.getElementById('kr-loading').style.display = 'none';
 
   panels = RACES.map(race => {
     const dfl = getLeaderFromMap(raceMap, race.dflTitle, 'DFL');
@@ -483,7 +487,7 @@ function renderPanels(raceMap) {
   showPanel(current < panels.length ? current : 0);
   document.getElementById('kr-time').textContent =
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  document.querySelector('.kr-wrap').classList.add('ready');
+  document.getElementById('kr-panels-wrap').classList.add('ready');
 }
 
 // ── Fetch live data ───────────────────────────────────────────────────────────
