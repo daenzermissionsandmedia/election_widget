@@ -349,9 +349,9 @@ const PHOTOS = {
 //   { panelTitle: 'U.S. Senate', dflTitle: 'U.S. Senator - DFL', rTitle: 'U.S. Senator - R', dflLabel: 'Democrat' },
 // ─────────────────────────────────────────────────────────────────────────────
 const RACES = [
-  { panelTitle: 'MN Governor',    dflTitle: 'MN Governor Dem Primary',  rTitle: 'MN Governor Rep Primary',  dflLabel: 'Democrat' },
-  { panelTitle: 'MN U.S. Senate', dflTitle: 'MN Senate Dem Primary',    rTitle: 'MN Senate Rep Primary',    dflLabel: 'Democrat' },
-  { panelTitle: 'WI Governor',    dflTitle: 'WI Governor Dem Primary',  rTitle: 'WI Governor Rep Primary',  dflLabel: 'Democrat' },
+  { panelTitle: 'Key Races: MN Governor',    dflTitle: 'MN Governor Dem Primary',  rTitle: 'MN Governor Rep Primary',  dflLabel: 'Democratic Primary Leader', rLabel: 'Republican Primary Leader' },
+  { panelTitle: 'Key Races: MN U.S. Senate', dflTitle: 'MN Senate Dem Primary',    rTitle: 'MN Senate Rep Primary',    dflLabel: 'Democratic Primary Leader', rLabel: 'Republican Primary Leader' },
+  { panelTitle: 'Key Races: WI Governor',    dflTitle: 'WI Governor Dem Primary',  rTitle: 'WI Governor Rep Primary',  dflLabel: 'Democratic Primary Leader', rLabel: 'Republican Primary Leader' },
 ];
 
 // ── Parse CBS LiveSync <data>/<packet> XML format ─────────────────────────────
@@ -455,16 +455,16 @@ function buildSide(leader, partyLabel, sideClass, precinctStr) {
 }
 
 // ── Build a full two-up panel ─────────────────────────────────────────────────
-function buildPanel(title, dflLeader, rLeader, dflLabel, dflPrec, rPrec) {
+function buildPanel(title, dflLeader, rLeader, dflLabel, rLabel, dflPrec, rPrec) {
   const div = document.createElement('div');
   div.className = 'kr-panel hidden';
   div.innerHTML =
     '<div class="kr-race-label">' +
-      '<span>' + title + ' — PRIMARY</span>' +
+      '<span>' + title + '</span>' +
     '</div>' +
     '<div class="kr-body">' +
-      buildSide(dflLeader, 'Democrat Race Leader', 'dfl-side', dflPrec) +
-      buildSide(rLeader, 'Republican Race Leader', 'r-side', rPrec) +
+      buildSide(dflLeader, dflLabel, 'dfl-side', dflPrec) +
+      buildSide(rLeader, rLabel, 'r-side', rPrec) +
     '</div>';
   return div;
 }
@@ -480,7 +480,7 @@ function renderPanels(raceMap) {
     const r   = getLeaderFromMap(raceMap, race.rTitle,   'R');
     const dflPrec = dfl ? Math.round((dfl.precRep / dfl.precTot) * 100) + '% votes in' : '';
     const rPrec   = r   ? Math.round((r.precRep   / r.precTot)   * 100) + '% votes in' : '';
-    return buildPanel(race.panelTitle, dfl, r, race.dflLabel, dflPrec, rPrec);
+    return buildPanel(race.panelTitle, dfl, r, race.dflLabel, race.rLabel, dflPrec, rPrec);
   });
 
   panels.forEach(p => stage.appendChild(p));
@@ -556,7 +556,7 @@ async function init() {
   });
   sizer.observe(wrap);
 }
- 
+
 init();
 </script>
 </body>
