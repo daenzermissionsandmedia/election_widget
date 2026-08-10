@@ -27,6 +27,11 @@
     border: 1px solid #333;
     overflow: visible;
     width: 100%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .kr-wrap.ready {
+    opacity: 1;
   }
 
   /* Top label bar */
@@ -274,8 +279,11 @@
 </div>
 
 <script>
-const ADVANCE_MS = 10000;
+// Kick off data fetch immediately — before anything else loads
 const FEED_URL   = 'https://mn-election-proxy.daenzermissionsandmedia.workers.dev/results';
+const _earlyFetch = fetch(FEED_URL, { cache: 'no-store' });
+
+const ADVANCE_MS = 10000;
 const REFRESH_MS = 60000;
 
 // ── Photos: keyed by candidate name ──────────────────────────────────────────
@@ -456,12 +464,19 @@ function renderPanels(raceMap) {
   showPanel(current < panels.length ? current : 0);
   document.getElementById('kr-time').textContent =
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  document.querySelector('.kr-wrap').classList.add('ready');
 }
 
 // ── Fetch live data ───────────────────────────────────────────────────────────
+let _firstLoad = true;
+
 async function fetchAndRender() {
   try {
-    const res = await fetch(FEED_URL, { cache: 'no-store' });
+    // On first load use the already-in-flight early fetch; after that fetch fresh
+    const res = _firstLoad
+      ? await _earlyFetch
+      : await fetch(FEED_URL, { cache: 'no-store' });
+    _firstLoad = false;
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     const raceMap = parseJSON(json);
@@ -469,6 +484,7 @@ async function fetchAndRender() {
     renderPanels(raceMap);
   } catch (err) {
     console.warn('Live feed error:', err);
+    _firstLoad = false;
   }
 }
 
