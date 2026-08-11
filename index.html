@@ -306,7 +306,7 @@ const FEED_URL   = 'https://mn-election-proxy.daenzermissionsandmedia.workers.de
 const _earlyFetch = fetch(FEED_URL, { cache: 'no-store' });
 
 const ADVANCE_MS = 10000;
-const REFRESH_MS = 60000;
+const REFRESH_MS = 55000 + Math.random() * 10000; // 55-65 seconds
 
 // ── Photos: keyed by candidate name ──────────────────────────────────────────
 // Drop in base64 strings or URLs when headshots are available
